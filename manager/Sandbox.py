@@ -12,6 +12,7 @@ import collections
 import logging
 
 from datetime import datetime
+from elftools.elf.elffile import ELFFile
 
 import traceback
 
@@ -29,6 +30,7 @@ GET_IP_FROM_PCAP = DIR_SCRIPTS + "get_ip_from_pcap.sh"
 START_NET_COMMAND = DIR_SCRIPTS + "start_network.sh"
 STOP_NET_COMMAND = DIR_SCRIPTS + "stop_network.sh"
 DEFAULT_MAC_FILE_NAME = "/mac_addr"
+MALWARE_DIR = "/malware/malware/"
 
 
 class InitSandbox:
@@ -57,6 +59,13 @@ class InitSandbox:
         self.built_fs = False
         # self._static_analysis() TODO: move the arch analysis and the rest here?
         self.use_debian = False # Do not change this
+
+        #emulator parameters
+        self.kernel_img = ""
+        self.fs_img = ""
+        self.emulator = ""
+        self._fix_emulator_parameters()
+
         self.file_system = self._create_fs()
         self.result_directory = self._make_result_dir()
         self.pcap_directory = self._make_pcap_dir()
@@ -79,16 +88,17 @@ class InitSandbox:
             params = [self.abs_path + RARE_DYNAMIC_COMMAND,
                                         self.abs_path,
                                         self.pcap_directory,
-                                        self.file_system, str(self.use_debian), self.mac_addr]
+                                        self.file_system, str(self.use_debian), self.mac_addr,
+                                        self.emulator, self.kernel_img]
             if self.iteration>=1:
                 proc = subprocess.Popen(self.abs_path + STOP_NET_COMMAND, stdout=subprocess.PIPE)
                 out1, err1 = proc.communicate()
                 if err1:
-                    l.error("Couldn't stop network for %s iteration: %s", self.iteration, err)
+                    l.error("Couldn't stop network for %s iteration: %s", self.iteration, err1)
                 proc = subprocess.Popen(self.abs_path + START_NET_COMMAND, stdout=subprocess.PIPE)
                 out2, err2 = proc.communicate()
                 if err2:
-                    l.error("Couldn't start network for %s iteration: %s", self.iteration, err)
+                    l.error("Couldn't start network for %s iteration: %s", self.iteration, err2)
             proc = subprocess.Popen(params, stdout=subprocess.PIPE)
             out, err = proc.communicate()
             self.start_time = time.time()
@@ -177,6 +187,24 @@ class InitSandbox:
             # traceback.print_stack()
             pass
 
+    def _fix_emulator_parameters(self):
+        fi = open(self.abs_path + MALWARE_DIR + self.name, "rb")
+        elffile = ELFFile(fi)
+        arch = elffile.get_machine_arch()
+        endianness = ""
+        if elffile.little_endian:
+            endianness = "L"
+        else:
+            endianness = "B"
+        if arch == "MIPS" and endianness == "B":
+            self.kernel_img = "openwrt-malta-be-vmlinux.elf"
+            self.fs_img = "openwrt-malta-be-root.ext4"
+            self.emulator = "mips-softmmu/qemu-system-mips"
+        else:
+            self.kernel_img = "openwrt-malta-le-vmlinux.elf"
+            self.fs_img = "openwrt-malta-le-root.ext4"
+            self.emulator = "mipsel-softmmu/qemu-system-mipsel"
+
     def _create_fs(self):
         l.warning("%d_%s: creating filesystem", self.iteration, self.name)
         target_ip = None
@@ -230,7 +258,8 @@ class InitSandbox:
             try:
                 proc = subprocess.Popen([self.abs_path + MOUNTING_HANDLER,
                                          self.name,
-                                         self.abs_path], stdout=subprocess.PIPE)
+                                         self.abs_path,
+                                         self.fs_img], stdout=subprocess.PIPE)
                 out, err = proc.communicate()
                 self.temporary_folder = out.split()[-1]
             except:

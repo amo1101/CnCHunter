@@ -41,11 +41,11 @@ CUR_DIR = os.path.dirname(os.path.realpath(__file__))
 DIR_SCRIPTS = CUR_DIR + os.sep + "scripts" + os.sep
 STOP_RARE_COMMAND = DIR_SCRIPTS + "stop_rare.sh"
 start_network_command = DIR_SCRIPTS + "start_network.sh"
-stop_network_command = DIR_SCRIPTS + "stop_network.sh" 
+stop_network_command = DIR_SCRIPTS + "stop_network.sh"
 
 set_running_instances = set()
 
-supported_architectures = {"MIPS":{32:["B"]}}
+supported_architectures = {"MIPS":{32:["B","L"]}}
 def is_platform_supported(filename, supported_architectures):
     try:
         fi = open(filename,"rb")
@@ -190,7 +190,7 @@ def recv_signal(sig_num, frame):
 if __name__ == "__main__":
     print(BANNER)
     signal.signal(signal.SIGINT, recv_signal)
-    print("[Master] Press CTRL+C whenever you want to exit")  
+    print("[Master] Press CTRL+C whenever you want to exit")
     parser = argparse.ArgumentParser()
     parser.add_argument("-target", nargs='*', type=str, help="the target CnC Address e.g. 104.168.98.105:45 or 104.168.98.0/24:45")
     parser.add_argument("-ports", nargs='*', type=str, help="the ports to be excluded like 23 (attributed to other activities like scanning)")
@@ -205,7 +205,7 @@ if __name__ == "__main__":
             args_dict['IPs'] = addr_list
         else:
             print("[Master] Error in parsing the target arguments!")
-            sys.exit()       
+            sys.exit()
     else:
         print("[Master] Only finding currently contacted CnCs")
     if args.ports:
@@ -215,7 +215,7 @@ if __name__ == "__main__":
         args_dict['CnCAddr'] = args.CnCAddr
     if len(args_dict):
         arguments = (args_dict,)
-    
+
     p = Process(target=main, args=arguments)  #threading and pyshark wouldn't go well
     p.start()
     p.join()

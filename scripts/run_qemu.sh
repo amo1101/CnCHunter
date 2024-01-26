@@ -4,12 +4,15 @@ FS_MALWARE_NAME=$2
 DEBIAN=$3
 ROOT_DIR=$4
 MAC_WAN=$5
+EMULATOR=$6
+KERNEL_IMG=$7
 BR_WAN="br-wan"
 IF_INET="eth0"
+QEMU_ROOT=$ROOT_DIR/../qemu/build/
 
 # - qemu-bridge-help has to be root setuid program.
 #HELPER="/root/Desktop/qemu/build/qemu-bridge-helper"
-HELPER="$ROOT_DIR/Qemu/build/qemu-bridge-helper"
+HELPER="$QEMU_ROOT/qemu-bridge-helper"
 mac_rand() {
         hexdump -n 3 -e '"52:54:00:" 2/1 "%02x:" 1/1 "%02x"' /dev/urandom
 }
@@ -19,9 +22,9 @@ mac_rand() {
 echo $MAC_WAN > $DIR_TO_PCAP/mac_addr
 if [ $DEBIAN == "False" ]; then
 #/root/Desktop/qemu/build/mips-softmmu/qemu-system-mips \
-$ROOT_DIR/Qemu/build/mips-softmmu/qemu-system-mips \
+$QEMU_ROOT/$EMULATOR \
 	-M malta -nographic -m 1024 \
-	-kernel $ROOT_DIR/kernels/openwrt-malta-be-vmlinux.elf \
+	-kernel $ROOT_DIR/kernels/$KERNEL_IMG \
 	-drive file=$FS_MALWARE_NAME,index=0,media=disk,format=raw -append "root=/dev/sda" \
     -netdev bridge,id=wan,br="$BR_WAN,helper=$HELPER" -device pcnet,netdev=wan,mac="$MAC_WAN" \
 	-object filter-dump,id=wan,netdev=wan,file=$DIR_TO_PCAP/qemu_wan.pcap
