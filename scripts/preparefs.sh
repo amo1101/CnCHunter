@@ -45,15 +45,28 @@ cat > $MOUNT_FOLDER/done.sh << EOF
 sleep $EXPERIMENT_TIME && /$MALWARE_NAME/killAll.sh; iptables -F && /etc/init.d/dropbear start && echo ok > /all_done
 EOF
 
+# Configure network to allow dhcp IP assignment from host DHCP server
+cat > $MOUNT_FOLDER/confnet.sh << EOF
+#!/bin/sh
+uci delete network.lan
+uci set network.wan=interface
+uci set network.wan.proto='dhcp'
+uci set network.wan.ifname='eth0'
+uci set network.wan.dns='8.8.8.8 8.8.4.4'
+uci commit network
+/etc/init.d/network restart
+EOF
+
 cat > $MOUNT_FOLDER/etc/runRARE.sh << EOF
 #!/bin/sh
+/confnet.sh
 sleep 20
 /done.sh &
 /bin/sh /${ITERATION}_$MALWARE_NAME.sh &
 cd /$MALWARE_NAME; ./script.sh $MALWARE_NAME $ITERATION &
 EOF
 
-chmod +x $MOUNT_FOLDER/etc/runRARE.sh $MOUNT_FOLDER/done.sh
+chmod +x $MOUNT_FOLDER/etc/runRARE.sh $MOUNT_FOLDER/done.sh $MOUNT_FOLDER/confnet.sh
 
 if [[ $TARGET_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     cat > $MOUNT_FOLDER/etc/rc.local << EOF

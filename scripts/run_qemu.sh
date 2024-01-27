@@ -8,7 +8,7 @@ EMULATOR=$6
 KERNEL_IMG=$7
 BR_WAN="br-wan"
 IF_INET="eth0"
-QEMU_ROOT=$ROOT_DIR/../qemu/build/
+QEMU_ROOT=$ROOT_DIR/../qemu/build
 
 # - qemu-bridge-help has to be root setuid program.
 #HELPER="/root/Desktop/qemu/build/qemu-bridge-helper"

@@ -8,4 +8,4 @@ for malware_id in `ps aux | grep $file | grep -v grep | awk ' { print $2;}'`; do
      fi
 done
 
-# screen -wipe
+screen -wipe
