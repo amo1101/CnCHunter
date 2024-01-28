@@ -6,6 +6,10 @@ ROOT_DIR=$4
 MAC_WAN=$5
 EMULATOR=$6
 KERNEL_IMG=$7
+ROOT_DEV=$8
+MACH=$9
+NET_DEV=${10}
+
 BR_WAN="br-wan"
 IF_INET="eth0"
 QEMU_ROOT=$ROOT_DIR/../qemu/build
@@ -23,10 +27,10 @@ echo $MAC_WAN > $DIR_TO_PCAP/mac_addr
 if [ $DEBIAN == "False" ]; then
 #/root/Desktop/qemu/build/mips-softmmu/qemu-system-mips \
 $QEMU_ROOT/$EMULATOR \
-	-M malta -nographic -m 1024 \
+	-M $MACH -nographic -m 1024 \
 	-kernel $ROOT_DIR/kernels/$KERNEL_IMG \
-	-drive file=$FS_MALWARE_NAME,index=0,media=disk,format=raw -append "root=/dev/sda" \
-    -netdev bridge,id=wan,br="$BR_WAN,helper=$HELPER" -device pcnet,netdev=wan,mac="$MAC_WAN" \
+	-drive file=$FS_MALWARE_NAME,index=0,media=disk,format=raw -append "root=$ROOT_DEV" \
+    -netdev bridge,id=wan,br="$BR_WAN,helper=$HELPER" -device $NET_DEV,netdev=wan,mac="$MAC_WAN" \
 	-object filter-dump,id=wan,netdev=wan,file=$DIR_TO_PCAP/qemu_wan.pcap
 else
 cp $ROOT_DIR/debian/debian_kernel $ROOT_DIR/debian/$FS_MALWARE_NAME

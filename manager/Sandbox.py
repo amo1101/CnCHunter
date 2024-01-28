@@ -64,6 +64,9 @@ class InitSandbox:
         self.kernel_img = ""
         self.fs_img = ""
         self.emulator = ""
+        self.root_dev=""
+        self.mach = ""
+        self.net_dev = ""
         self._fix_emulator_parameters()
 
         self.file_system = self._create_fs()
@@ -89,7 +92,7 @@ class InitSandbox:
                                         self.abs_path,
                                         self.pcap_directory,
                                         self.file_system, str(self.use_debian), self.mac_addr,
-                                        self.emulator, self.kernel_img]
+                                        self.emulator, self.kernel_img, self.root_dev,self.mach,self.net_dev]
             if self.iteration>=1:
                 proc = subprocess.Popen(self.abs_path + STOP_NET_COMMAND, stdout=subprocess.PIPE)
                 out1, err1 = proc.communicate()
@@ -196,14 +199,27 @@ class InitSandbox:
             endianness = "L"
         else:
             endianness = "B"
-        if arch == "MIPS" and endianness == "B":
-            self.kernel_img = "openwrt-malta-be-vmlinux.elf"
-            self.fs_img = "openwrt-malta-be-root.ext4"
-            self.emulator = "mips-softmmu/qemu-system-mips"
-        else:
-            self.kernel_img = "openwrt-malta-le-vmlinux.elf"
-            self.fs_img = "openwrt-malta-le-root.ext4"
-            self.emulator = "mipsel-softmmu/qemu-system-mipsel"
+
+        if arch == "MIPS" :
+            self.mach = "malta"
+            self.root_dev = "/dev/sda"
+            self.net_dev = "pcnet"
+            if endianness == "B":
+                self.kernel_img = "openwrt-malta-be-vmlinux.elf"
+                self.fs_img = "openwrt-malta-be-root.ext4"
+                self.emulator = "mips-softmmu/qemu-system-mips"
+            else:
+                self.kernel_img = "openwrt-malta-le-vmlinux.elf"
+                self.fs_img = "openwrt-malta-le-root.ext4"
+                self.emulator = "mipsel-softmmu/qemu-system-mipsel"
+
+        if arch == "ARM":
+            self.mach = "virt"
+            self.root_dev = "/dev/vda"
+            self.net_dev = "virtio-net"
+            self.kernel_img = "openwrt-armsr-armv7-generic-kernel.bin"
+            self.fs_img = "openwrt-armsr-armv7-generic-root.ext4"
+            self.emulator = "arm-softmmu/qemu-system-arm"
 
     def _create_fs(self):
         l.warning("%d_%s: creating filesystem", self.iteration, self.name)

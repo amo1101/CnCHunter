@@ -45,7 +45,7 @@ stop_network_command = DIR_SCRIPTS + "stop_network.sh"
 
 set_running_instances = set()
 
-supported_architectures = {"MIPS":{32:["B","L"]}}
+supported_architectures = {"MIPS":{32:["B","L"]}, "ARM":{32:["B","L"]}}
 def is_platform_supported(filename, supported_architectures):
     try:
         fi = open(filename,"rb")
